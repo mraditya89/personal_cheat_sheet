@@ -30,6 +30,11 @@ tags = doc.find_all('p')
 # find a text on html
 tags = doc.find_all(text='$') 
 
+# find tag with specific classname
+tags = doc.find_all("div", class_='quote')
+
+# Available parameter on tag filter: class_, value, name, id, limit
+
 # get parent result
 parentTag = tag.parent
 
@@ -37,9 +42,35 @@ parentTag = tag.parent
 
 ### scrape from internet
 ```
-from bs4 import BeautifulSoup
-import request
+from urllib.request import Request, urlopen
 
-response = request.get(<url>)
-    doc = BeautifulSoup(response, 'html.parser')
+from bs4 import BeautifulSoup
+
+url = 'http://quotes.toscrape.com/'
+request = Request(url)
+response = urlopen(request)
+
+doc = BeautifulSoup(response, 'html.parser')
+print(doc.prettify())
+
+```
+
+### manipulate 
+```
+from bs4 import BeautifulSoup
+
+# open a index.html file
+with open('index.html', 'r') as f:
+  doc = BeautifulSoup(f, 'html.parser')
+
+# find input tags
+tags = doc.find_all('input', text='text')
+
+# manipulate placeholder
+for tag in tags:
+  tag['placeholder'] = 'I changed you'
+
+# write a file
+with open('modified_index.html', 'w') as file:
+  file.write(str(doc))
 ```
