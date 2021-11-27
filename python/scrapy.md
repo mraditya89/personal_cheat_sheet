@@ -22,6 +22,7 @@ tag = doc.find('a') # get the first 'a' html tag
 
 # get text from a tag
 text = tag.text
+text = tag.string
 
 # find multilple tag element
 # get all 'p' html tag, wrapped in array
@@ -38,6 +39,16 @@ tags = doc.find_all("div", class_='quote')
 # get parent result
 parentTag = tag.parent
 
+# get children result
+childrenTag = tag.children
+
+# get a sibling
+nextSiblingTag = tag.next_sibling
+prevSiblingTag = tag.previous_sibling
+
+# get siblings
+# return list of tags
+nextSiblingTags = tag.next_siblings
 ```
 
 ### scrape from internet
