@@ -1,106 +1,466 @@
 ###### tags : `tutorial` `sql` `mysql`
+
 # MYSQL Cheat Sheet
 
-## 1. Show, create, use, drop database
-```
-SHOW DATABASES;
-CREATE DATABASE <dbname>;
-USE <dbname>;
-DROP DATABASE <dbname>;
-```
-## 2.Tipe Data
-### 2.1 number : 
+## A. Introduction
+
+### 1. MYSQL Data Type
+
+#### Number
+Number data type
 - integer (signed, unsigned) : tinyint, smallint, mediumint, int, bigint
 - float (signed, unsigned) : float, double
 - decimal : decimal(5,2) => 5 digit, 2 angka di belakang koma,
 
-attribut: 
+Attribute: 
 - type(n) : show n digit
 - zerofill : INT(3) zerofill : add zero with total 3 digits: 007
-### 2.2 string
+
+#### String
 - char (static size) : char(10) => char with max 10 characters
 - varchar (dynamic size) : varchar(10) => varchar with max 10 characters
 - text : tinytext, text, mediumtext, longtext
 - enum : string with limited option, ex ("male", "female") 
-### 2.3 date time
+
+#### Datetime
 - date : yyyy-mm-dd
 - datetime : yyyy-mm-dd hh-mm-ss
 - timestamp : yyyy-mm-dd hh-mm-ss
 - time : hh-mm-ss
 - year : yyyy
-### 2.4 boolean : TRUE or FALSE
-### 2.5 lain2
-- blob
-- spatial
-- json
- 
-## 3. Tables
 
-### 3.1 show tables
+#### Boolean : TRUE or FALSE
+#### Misc : blob, spatial, json
+
+### 2. Using Mysql CLI
+- connect to mysql database : 
 ```
-SHOW TABLES;
+mysql -u <username> -p
 ```
-### 3.2 create table
+- Create a sql from a database
 ```
-CREATE TABLE barang (
-  kode INT NOT NULL,
-   nama VARCHAR (100),
-   harga INT ,
-   jumlah INT, 
-   PRIMARY KEY (kode)
+mysql -u root -p <db_name> > <file_dump.sql>
+```
+- Execute a sql script into a certain database
+```
+mysql -u root -p <db_name> < <file_dump.sql>
+```
+> Note : make sure <db_name> is exists to inject sql script. 
+
+## B. Data Definition Language (DDL) 
+DDL deals with database schemas and descriptions, of how the data should reside in the database
+
+- CREATE - to create a database and its objects like (table, index, views, store procedure, function, and triggers)
+- ALTER - alters the structure of the existing database
+- DROP - delete objects from the database
+- TRUNCATE - remove all records from a table, including all spaces allocated for the records are removed
+- COMMENT - add comments to the data dictionary
+- RENAME - rename an object
+
+### 1. Create
+
+#### Create a Database
+```
+CREATE DATABASE <db_name>
+```
+
+Common used SQL command related to a database
+- `USE <db_name>` : Use a database
+- `SHOW DATABASES` : Show database list
+
+#### Create a Table
+
+```
+CREATE TABLE <tb_name> (
+  <field_1> <data_type> <attribute>, 
+  <field_2> <data_type> <attribute>, 
+  ... 
+  <keyword> <field>
 ) ENGINE = InnoDB;
+```
 
-CREATE TABLE admin (
-  id INT NOT NULL AUTO_INCREMENT, 
-  username VARCHAR(100), 
-  pasword VARCHAR(100), 
-  PRIMARY KEY (id)
+Example
+```
+CREATE TABLE categories(
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE products (
+  id INT NOT NULL AUTO INCREMENT,
+  name VARCHAR(100),
+  price UNSIGNED INT NOT NULL,
+  quantity UNSIGNED SMALL INT DEFAULT 0,
+  categoryId INT, 
+  PRIMARY KEY (id), 
+  FOREIGN KEY (categoryId) 
+        REFERENCES categories(id)
 ) ENGINE = InnoDB;
 ```
-### 3.3 See table schema
-```
-DESCRIBE barang;
-```
-### 3.4 Alter / modify table
-```
-ALTER TABLE barang
-ADD COLUMN nama_kolom TEXT,
-DROP COLUMN nama, 
-RENAME COLUMN nama TO nama_baru;
 
-ALTER TABLE barang
-MODIFY 
-  jumlah INT NOT NULL DEFAULT 0, 
-ADD COLUMN 
-  waktu_dibuat TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;
+Common used SQL command related to a table
+- `SHOW TABLES` : Show table list
+- `DESCRIBE <tb_name>` : Get table description
 
-ALTER TABLE barang
-  ADD PRIMARY KEY (kode);
+### 2. Alter
+#### Alter a Table
 
-ALTER TABLE barang
-# change "nama" type data and put it after jumlah
-  MODIFY COLUMN nama VARCHAR(100) AFTER jumlah;
+Supported method : 
+- `ADD <field> <data_type> <attribute>`
+- `DROP <field>` 
+- `RENAME <field> to <new_field>`
+- `MODIFY <field> <data_type> <attribute>`
+
+Basic Syntax : 
+
+```
+ALTER TABLE <tb_name>
+<alter_method>;
+```
+
+Example
+```
+ALTER TABLE products
+  ADD COLUMN createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  DROP COLUMN categories, 
+  RENAME COLUMN name TO productName;
 
 ALTER TABLE products
-    ADD COLUMN category ENUM('Electronic', 'House', 'Others')
+  ADD PRIMARY KEY (id);
+
+-- change name type data and put it after jumlah
+ALTER TABLE barang
+  MODIFY COLUMN name VARCHAR(100) 
+    AFTER jumlah;
+
+ALTER TABLE products
+  ADD COLUMN 
+    category ENUM('Electronic', 'House', 'Others')
     AFTER name;
 ```
-### 3.5 Recreate Table
-Delete all rows and create a table with same schema
+### 3. Drop
+> Note : drop a large database or a table will takes time
+
+#### Drop a Database
 ```
-TRUNCATE TABLE barang;
+DROP DATABASE <db_name>;
 ```
-### f. Delete Table
+
+#### Drop a Table
 ```
-DROP TABLE barang;
+DROP TABLE <tb_name>;
 ```
-## 4. Insert Data
+
+### 4. Truncate
 ```
+TRUNCATE TABLE <tb_name>;
+```
+
+## C. Data Manipulation Language (DML) 
+DML deals with data manipulation and includes most common SQL statements such SELECT, INSERT, UPDATE, DELETE, etc., and it is used to store, modify, retrieve, delete and update data in a database.
+
+- SELECT - retrieve data from a database
+- INSERT - insert data into a table
+- UPDATE - updates existing data within a table
+- DELETE - Delete all records from a database table
+- MERGE - UPSERT operation (insert or update)
+- CALL - call a PL/SQL or Java subprogram
+- EXPLAIN PLAN - interpretation of the data access path
+- LOCK TABLE - concurrency Control
+
+### 1. Select
+#### 1.1 Basic Query
+
+```
+SELECT 
+  DISTINCT 
+  <TOP_specification> 
+  <select_list>
+FROM <left_tb>
+  <join_type> JOIN <right_tb>
+  ON <join_condition>
+WHERE 
+  <where_condition>
+GROUP BY 
+  <group_by_list>
+HAVING 
+  <having_condition>
+ORDER BY 
+  <order_by_list>
+LIMIT 
+  <limit_parameter>;
+```
+
+Example
+```
+-- select all field in products
+SELECT * 
+FROM products
+ORDER BY createdAt DESC
+LIMIT 10;
+```
+
+#### 1.2 Select Clause
+- Select multiple field with alias
+```
+SELECT 
+  <keyword> <field_1> AS <alias>, 
+  <field_2> AS <alias>, 
+  ...
+FROM <tb_name> AS <alias>;
+```
+
+- A wild card
+use `*` to select all field on the table
+```
+SELECT * FROM <tb_name>;
+```
+- Use Distinct Keyword to get distinct field
+```
+SELECT 
+DISTINCT category 
+FROM products;
+```
+
+- Example
+```
+SELECT 
+  p.id AS 'Kode', 
+  p.name AS 'Nama', 
+  p.category AS 'Kategori'
+FROM products AS p;  
+```
+
+
+#### 1.3 Where Clause
+Use `where` clause to filter query with specific criteria.
+
+- Comparison Operator
+
+| Operator | Description | 
+| -------- | -------- | 
+| `=`     | Equal to     | 
+| `<>` or `!=`     | Not equal to     | 
+| `<`     | Less than     | 
+| `<=`     | Less than or equal to     | 
+| `>`     | Greater than    | 
+| `>=`     | Greater than or equal to     | 
+
+
+> Mysql is case insensitive, so filtering name = 'product' and name = 'Product' are equivalent 
+
+```
+-- filter a query that created after 2021-01-18
+...
+WHERE 
+  createdAt > '2021-01-18'
+...
+
+-- Find product which category is not 'food'
+...
+WHERE 
+  category != 'food'
+...
+```
+- Logical Operator
+  - Available Operator : `AND` and `OR` 
+  - Similar with mathematic's operation, `AND` will execute first before `OR`
+  - Example
+  ```
+  ...
+  WHERE 
+    category = handphone AND
+    price < 5000000
+  ...
+  ```
+- In and Between Operator
+  - In : filter a query if the value is on the list
+  - Between : filter a query between two numbers
+  - Example
+  ```
+  ...
+  WHERE 
+    <field> IN (<value_1>, <value_2>)
+  
+  ...
+  WHERE 
+    <field> BETWEEN <value_1> AND <value_2> 
+  
+  ```
+- Like Operator
+  - Basic operator
+
+    | Example | Description |
+    | -------- | -------- |
+    | LIKE '`<keyword>%`'     | A string begin with `<keyword>`     |
+    | LIKE '`%<keyword>`'     | A string end with `<keyword>`     |
+    | LIKE '`%<keyword>%`'     | A string include `<keyword>`     |
+    | NOT LIKE '`%<keyword>%`'     | A string not include `<keyword>` |
+  
+  - Example
+    ```
+    SELECT *
+    FROM products
+    WHERE 
+      name LIKE 'smartphone%'; 
+    ```
+    
+- Null Operator
+```
+SELECT * 
+FROM products 
+WHERE price IS NULL;
+```
+    
+- Regex Pattern
+LIKE '`%<keyword>%`' and REGEXP '`<keyword>`' are equivalent
+  - ^ : beginning with
+  - $ : ending with
+  - | : logical or
+  - [abc]  : match single char
+  - [a-z] : range a - z
+
+Example pattern:
+  - ^phone : begin with phone
+  - phone$ : end with phone
+  - phone|food : begin or end with phone or food
+  - [gie] m  : begin or end with gm, im or em
+  - a[abc] : begin or end with aa, ab, or ac
+  - a[a-f] : begin or end with aa, ab, ac,... af
+
+Regex On SQL query
+```
+-- Syntax
+WHERE
+  <field> REGEXP <pattern>
+```
+Example
+```
+SELECT 
+    name
+FROM
+    products
+WHERE
+    product REGEXP '^smart';
+```
+
+#### 1.4 Order By Clause
+- Available keyword are `DESC` and `ASC` with default value `ASC`  
+- Basic Syntax
+```
+...
+ORDER BY
+    <field> <keyword>;
+```
+- Example
+```
+...
+ORDER BY
+    createdAt DESC;
+```
+        
+
+#### 1.5 Limit Clause
+Use `LIMIT` clause to set offset and limit of query
+```
+-- limit cluase with offset and limit
+...
+LIMIT <offset>, <limit>;
+
+
+-- limit clause with a limit
+...
+LIMIT <limit>;
+```
+        
+#### 1.6 Join Table
+```
+-- join 2 tables
+SELECT 
+  order_id, 
+  first_name, 
+  last_name, 
+  o.customer_id
+FROM orders o
+JOIN customers c
+  ON o.customer_id = c.costumer_id
+
+-- self join
+SELECT 
+  e.employee_id, 
+  e.first_name, 
+  m.first_name AS manager
+FROM employees e
+JOIN employees m
+  ON e.employee_id = m.employee_id
+
+-- join multiple tables
+SELECT *
+  o.order_id, 
+  o.order_date, 
+  c.first_name, 
+  c.last_name, 
+  os.name AS status
+FROM orders o
+JOIN customers c
+  ON o.customer_id = c.customer_id
+JOIN order_statuses os
+  ON o.status = os.order_status_id
+```
+        
+#### 1.7 Group By
+- Aggregate Function
+available aggregate function : count, avg, min, max, sum, etc
+```
+SELECT 
+AVG(price) AS 'average' 
+FROM products; 
+```
+        
+- Group By
+```
+SELECT 
+  category,
+  COUNT(id) AS 'Total Product' 
+FROM products
+GROUP BY category;
+```
+
+#### 1.8 Having Clause
+Filter a data which meet group by condition
+```
+SELECT 
+    ordernumber,
+    SUM(quantityOrdered) AS itemsCount,
+    SUM(priceeach*quantityOrdered) AS total
+FROM
+    orderdetails
+GROUP BY 
+   ordernumber
+HAVING 
+   total > 1000;       
+```
+
+### 2. Insert
+
+Basic Syntax
+```
+INSERT INTO <tb_name>
+  (field_1, field_2, ...)
+VALUES
+  (value_1, value_2, ...), 
+  (value_1, value_2, ...);
+```
+
+Example
+```
+-- insert a record
 INSERT INTO products 
   (id, name, price, quantity) 
 VALUES 
   (1, 'Mi 10', 5000000, 100);
-    
+
+-- insert multiple record
 INSERT INTO products 
   (id, name, price, quantity) 
 VALUES 
@@ -108,169 +468,96 @@ VALUES
   (3, 'Samsung Smartwatch', 3500000, 75), 
   (4, 'Keyboard Logitech', 350000, 150);
 ```
-## 5. Select Data
-### 5.1 General Query
+
+### 3. Update
+
+Basic Syntax
 ```
-SELECT * 
-FROM products;
-
-SELECT 
-  id, 
-  name, 
-  price, 
-  quantity 
-FROM products;
-
-SELECT id, 
-  name as nama, 
-  price as harga 
-FROM products;
+UPDATE <tb_name>
+SET 
+  <field> = <new_value>, 
+  <field> = <new_value>, 
+  ...
+WHERE
+  <where_condition>
 ```
-### 5.2 Where Clause
-Used for filter a query
 
+Example
 ```
-SELECT * 
-FROM products 
-WHERE quantity=100;
-
-SELECT * 
-FROM products 
-WHERE price <= 10000000;
-
-SELECT * 
-FROM products 
-WHERE name = 'Mi 10';
-```
-> Note : in mysql, default is case insensitive, so when name = 'Mi 10' is equal to name = 'mi 10'  
-
-
-## 6. Update Data
-
-```
-//Update a column
+-- update a column
 UPDATE products
 SET category = 'Makanan'
 WHERE id = 1;
 
-//Update multiple column
+-- update multiple column
 UPDATE products
 SET category = 'Minuman', 
 description ='Mie ayam original + ceker '
 WHERE id = 2;
 
-// Update with existing value
+-- update with existing value
 UPDATE products
 SET price = price + 5000
 WHERE id = 1;
 ```
-## 7. Delete Data
-```
-DELETE FROM products
-WHERE id = 2;
-```
-## 8. Alias
-```
-SELECT 
-  id AS 'Kode',
-  name AS 'Nama' ,
-  category AS 'Kategory'
-FROM products;
 
-SELECT 
-  p.id AS 'Kode', 
-  p.name AS 'Nama', 
-  p.category AS 'Category'
-FROM products AS p;  
-```
-
-## 9.  Where Operator
-### 9.1 Comparison Operator
-
-
-| Column 1 | Column 2 | 
-| -------- | -------- | 
-| `=`     | Equal to     | 
-| `<>` or `!=`     | Not equal to     | 
-| <     | Less than     | 
-| <=     | Less than or equal to     | 
-| >     | Greater than    | 
-| >=     | Greater than or equal to     | 
+### 4. Delete
 
 ```
-SELECT * 
-FROM products
-WHERE quantity > 100;
+DELETE FROM <tb_name>
+WHERE
+  <where_condition>;
+```
+> Note : Make sure filter a data that you want to delete. There is no warning on mysql CLI when you delete multiple records.
 
-SELECT * 
-FROM products 
-WHERE category != 'Makanan';
-```
-### 9.2 Logical Operator
-```
-SELECT * 
-FROM products 
-WHERE 
-category != 'Makanan' AND price <= 20000;
+## D. Data Control Language (Data Control Language) 
 
-SELECT * 
-FROM products
-WHERE (category = 'Makanan' OR quantity > 500)
-AND price > 100000;
-```
-### 9.3 Like Operator
+DCL includes commands such as GRANT and mostly concerned with rights, permissions and other controls of the database system.
 
-| Column 1 | Column 2 |
-| -------- | -------- |
-| LIKE 'mie%'     | A string begin with 'mie'     |
-| LIKE '%mie'     | A string end with 'mie'     |
-| LIKE '%mie%'     | A string include 'mie'     |
-| NOT LIKE '%mie%'     | A string not include 'mie'     |
+- GRANT - allow users access privileges to the database
+- REVOKE - withdraw users access privileges given by using the GRANT command
 
-```
-SELECT *
-FROM products
-WHERE name LIKE 'mie%'; 
-```
+### 1. Type of Permission
 
-### 9.4 NULL Operator
+- `ALL PRIVILEGES` - this would allow a MySQL user full access to a designated database (or if no database is selected, global access across the system)
+- `CREATE` - allows them to create new tables or databases
+- `DROP` - allows them to them to delete tables or databases
+- `DELETE` - allows them to delete rows from tables
+- `INSERT` - allows them to insert rows into tables
+- `SELECT` - allows them to use the SELECT command to read through databases
+- `UPDATE` - allow them to update table rows
+- `GRANT OPTION` - allows them to grant or remove other users’ privileges
+      
+      
+### 2. Grant
+- Basic Syntax
 ```
-SELECT * 
-FROM products 
-WHERE price IS NULL;
-```
-### 9.5 BETWEEN Operator
-```
-SELECT * 
-FROM products 
-WHERE 
-  price BETWEEN 10000 AND 20000;
-```
-### 9.6 IN Operator
-```
-SELECT * 
-FROM products 
-WHERE category IN ('Makanan', 'Minuman');
+-- show grant
+SHOW GRANTS FOR '<user>'@'localhost';
+
+-- add grant to user 
+GRANT <permission> ON <db_name>.<tb_name> TO '<user>'@'localhost';
 ```
 
-### 9.7 LIMIT Operator
+Example
 ```
-# Get 2 data
-SELECT * 
-FROM products 
-LIMIT 2;
+GRANT ALL PRIVILEGES ON schooldb.* TO 'aditya'@'localhost';
+```
+      
+### 3. Revoke
+```
+REVOKE <permission> ON <db_name>.<tb_name> FROM '<user>'@'localhost';
+```
+      
+## E. Transaction Control Language (TCL) 
 
-# skip 10 data, get 2 data
-SELECT * 
-FROM products 
-LIMIT 10, 2;
-```
-### 9.8 DISTINT Operator
-```
-SELECT 
-  distinct category 
-FROM products;
-```
+TCL deals with a transaction within a database.
+
+- COMMIT - commits a Transaction
+- ROLLBACK - rollback a transaction in case of any error occurs
+- SAVEPOINT- to rollback the transaction making points within groups
+- SET TRANSACTION - specify characteristics of the transactio
+
 
 ## Numeric Function
 - Arithmetic Operator
@@ -281,6 +568,7 @@ FROM products;
 `/` : Division Operator
 `DIV` : integer divison
 
+      > aware of divide a number in mysql, 
 ```
 SELECT 
   id, 
@@ -376,7 +664,7 @@ FROM products;
 ```SELECT LAST_INSERT_ID();```
 
 
-# USER
+#### USER
 - Create User
 `CREATE USER [IF NOT EXISTS] '<account_name>' IDENTIFIED BY '<password>';`
 - Show User
@@ -385,5 +673,3 @@ FROM products;
 `GRANT ALL PRIVILEGES ON <dbname.*> TO '<account_name>';`
 - Delete User
 `DROP USER '<account_name>';`
-
-mysql -u root -p <database> < <file_dump.sql>
