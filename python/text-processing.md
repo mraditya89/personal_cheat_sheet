@@ -1,4 +1,6 @@
-## Text Processing In Data Science Projects
+###### tags : `tutorial` `sql` `mysql`
+
+# Text Processing In Data Science Projects
 [TOC]
 
 ## A. Case Folding
